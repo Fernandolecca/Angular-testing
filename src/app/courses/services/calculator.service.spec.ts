@@ -1,53 +1,44 @@
-import {CalculatorService} from './calculator.service';
-import {LoggerService} from './logger.service';
-import {TestBed} from '@angular/core/testing';
+import { TestBed } from "@angular/core/testing";
+import { CalculatorService } from "./calculator.service";
+import { LoggerService } from "./logger.service"
 
+describe("CalculatorService Tests", ( ) => {
+    // DOC -- dependent of component
+    // const logger = new LoggerService; 
+    let calculator: CalculatorService;
+    let loggerSpy: any;
 
-describe('CalculatorService', () => {
-
-    let calculator: CalculatorService,
-        loggerSpy: any;
-
-    beforeEach(()=> {
-
-        console.log("Calling beforeEach");
-
-        loggerSpy = jasmine.createSpyObj('LoggerService', ["log"]);
+    beforeEach(() => {
+        loggerSpy = jasmine.createSpyObj("LoggerService", ["log"]);
 
         TestBed.configureTestingModule({
             providers: [
                 CalculatorService,
-                {provide: LoggerService, useValue: loggerSpy}
+                { provide: LoggerService, useValue: loggerSpy}
             ]
         });
 
-        calculator = TestBed.get(CalculatorService);
+        // calculator = new CalculatorService(loggerSpy);
+        calculator = TestBed.inject(CalculatorService);
+    })
 
-    });
+    it("Should add two numbers", () => {
+        // spyOn(logger, "log");
+        
+        const actual = calculator.add(2, 2);
+        const expected = 4;
 
-    it('should add two numbers', () => {
-
-        console.log("add test");
-
-        const result = calculator.add(2, 2);
-
-        expect(result).toBe(4);
-
+        expect(actual).toBe(expected);
         expect(loggerSpy.log).toHaveBeenCalledTimes(1);
-
+        
     });
 
+    it("Should substract two numbers", () => {
+        const actual = calculator.subtract(2, 2);
+        const expected = 0;
 
-    it('should subtract two numbers', () => {
-
-        console.log("subtract test");
-
-        const result = calculator.subtract(2, 2);
-
-        expect(result).toBe(0, "unexpected subtraction result");
-
-        expect(loggerSpy.log).toHaveBeenCalledTimes(1);
-
+        // expect(actual).toBe(expected, "unexpected substraction result!");
+        expect(actual).toBe(expected);
     });
-
 });
+

@@ -1,18 +1,17 @@
-import {CoursesService} from './courses.service';
-import {TestBed} from '@angular/core/testing';
-import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
-import {COURSES, findLessonsForCourse} from '../../../../server/db-data';
-import {Course} from '../model/course';
-import {HttpErrorResponse} from '@angular/common/http';
+import { HttpErrorResponse } from "@angular/common/http";
+import { HttpClientTestingModule, HttpTestingController } from "@angular/common/http/testing";
+import { TestBed } from "@angular/core/testing";
+import { COURSES, findLessonsForCourse } from "../../../../server/db-data";
+import { Course } from "../model/course";
+import { CoursesService } from "./courses.service";
 
+describe("CoursesService", () => {
 
-describe('CoursesService', () => {
-
-    let coursesService: CoursesService,
-        httpTestingController: HttpTestingController;
+    let coursesService: CoursesService;
+    let httpTestingController: HttpTestingController
 
     beforeEach(() => {
-
+        
         TestBed.configureTestingModule({
             imports: [
                 HttpClientTestingModule
@@ -22,45 +21,42 @@ describe('CoursesService', () => {
             ]
         });
 
-        coursesService = TestBed.get(CoursesService),
-        httpTestingController = TestBed.get(HttpTestingController);
-
+        coursesService = TestBed.inject(CoursesService);
+        httpTestingController = TestBed.inject(HttpTestingController)
     });
 
-    it('should retrieve all courses', () => {
+    it("Should retrive all courses", () => {
 
         coursesService.findAllCourses()
-            .subscribe(courses => {
-
+            .subscribe( courses => {
                 expect(courses).toBeTruthy('No courses returned');
+                expect(courses.length).toBe(12, "incorrect number of courses");
 
-                expect(courses.length).toBe(12,
-                    "incorrect number of courses");
+                const course = courses.find( course => course.id === 12);
 
-                const course = courses.find(course => course.id == 12);
-
-                expect(course.titles.description).toBe(
-                    "Angular Testing Course");
-
-            });
-
-        const req = httpTestingController.expectOne('/api/courses');
+                expect(course.titles.description).toBe("Angular Testing Course");
+            })
+        
+        const req = httpTestingController.expectOne("/api/courses");
 
         expect(req.request.method).toEqual("GET");
 
-        req.flush({payload: Object.values(COURSES)});
-
+        // stub
+        req.flush({
+            payload: Object.values(COURSES)
+        })
+        
     });
 
-    it('should find a course by id', () => {
+
+    it("Should retrieve a course that match a given Id", () => {
 
         coursesService.findCourseById(12)
-            .subscribe(course => {
-
-                expect(course).toBeTruthy();
+            .subscribe( course => {
+                expect(course).not.toBeNull('course does not exist!!');
                 expect(course.id).toBe(12);
-
-            });
+                expect(course.titles.description).toBe("Angular Testing Course");
+            })
 
         const req = httpTestingController.expectOne('/api/courses/12');
 
@@ -70,100 +66,79 @@ describe('CoursesService', () => {
 
     });
 
-    it('should save the course data', () => {
+    it("Should save the course data", () => {
+        const newCourseDescription: Partial<Course> = { 
+            titles: { 
+                description: "React Advanced Course", 
 
-        const changes :Partial<Course> =
-            {titles:{description: 'Testing Course'}};
+            }
+        }
 
-        coursesService.saveCourse(12, changes)
-            .subscribe(course => {
-
-                expect(course.id).toBe(12);
-
-            });
+        coursesService.saveCourse(12, newCourseDescription)
+            .subscribe( courseModified => {
+                expect(courseModified).toBeTruthy('course cannot be updated');
+                expect(courseModified.id).toBe(12); 
+                expect(courseModified.titles.description).toBe("React Advanced Course");
+            })
 
         const req = httpTestingController.expectOne('/api/courses/12');
 
         expect(req.request.method).toEqual("PUT");
-
-        expect(req.request.body.titles.description)
-            .toEqual(changes.titles.description);
+        expect(req.request.body.titles.description).toEqual(newCourseDescription.titles.description);
 
         req.flush({
             ...COURSES[12],
-            ...changes
+            ...newCourseDescription
         })
 
-    });
+    })
 
-    it('should give an error if save course fails', () => {
-
-        const changes :Partial<Course> =
-            {titles:{description: 'Testing Course'}};
+    it("Should fail when server responds with an error", () => {
+        const changes: Partial<Course> = {
+            titles: { description: "Testing Course"}
+        }
 
         coursesService.saveCourse(12, changes)
             .subscribe(
-                () => fail("the save course operation should have failed"),
-
+                () => fail("the test should have been failed"),
                 (error: HttpErrorResponse) => {
                     expect(error.status).toBe(500);
                 }
-            );
-
-        const req = httpTestingController.expectOne('/api/courses/12');
+            )
+        
+        const req = httpTestingController.expectOne("/api/courses/12");
 
         expect(req.request.method).toEqual("PUT");
 
-        req.flush('Save course failed', {status:500,
-            statusText:'Internal Server Error'});
+        req.flush("This is a failed Response", { status: 500, statusText: "The request failed with a status 500"})
     });
 
-    it('should find a list of lessons', () => {
+    it("Should find a list of lessons", () => {
 
         coursesService.findLessons(12)
             .subscribe(lessons => {
-
-                expect(lessons).toBeTruthy();
-
-                expect(lessons.length).toBe(3);
-
+                expect(lessons).toBeTruthy("Lessons cannot be find");
+                
+                expect(lessons.length).toBe(10);
             });
 
         const req = httpTestingController.expectOne(
             req => req.url == '/api/lessons');
-
+        
         expect(req.request.method).toEqual("GET");
-        expect(req.request.params.get("courseId")).toEqual("12");
-        expect(req.request.params.get("filter")).toEqual("");
-        expect(req.request.params.get("sortOrder")).toEqual("asc");
-        expect(req.request.params.get("pageNumber")).toEqual("0");
-        expect(req.request.params.get("pageSize")).toEqual("3");
+
+        expect(req.request.params.get("courseId")).toEqual("12")
+        expect(req.request.params.get("filter")).toEqual("")
+        expect(req.request.params.get("sortOrder")).toEqual("asc")
+        expect(req.request.params.get("pageNumber")).toEqual("0")
+        expect(req.request.params.get("pageSize")).toEqual("3")
 
         req.flush({
-            payload: findLessonsForCourse(12).slice(0,3)
-        });
-
-
-    });
+            payload: findLessonsForCourse(12)
+        })
+    })
 
     afterEach(() => {
-
         httpTestingController.verify();
-    });
-
+    })
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

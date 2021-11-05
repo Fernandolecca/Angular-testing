@@ -12,143 +12,115 @@ import {By} from '@angular/platform-browser';
 import {of} from 'rxjs';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {click} from '../common/test-utils';
-
-
+import { Course } from '../model/course';
 
 
 describe('HomeComponent', () => {
 
   let fixture: ComponentFixture<HomeComponent>;
-  let component:HomeComponent;
-  let el: DebugElement;
+  let component: HomeComponent;
+  let element: DebugElement;
   let coursesService: any;
+  const beginnersCourses = setupCourses()
+    .filter(course => course.category === 'BEGINNER');
+  const advancedCourses = setupCourses()
+    .filter(course => course.category === 'ADVANCED');
 
-  const beginnerCourses = setupCourses()
-      .filter(course => course.category == 'BEGINNER');
+  beforeEach( waitForAsync(() => {
 
-    const advancedCourses = setupCourses()
-        .filter(course => course.category == 'ADVANCED');
+    const coursesServiceSpy = jasmine.createSpyObj("CoursesService", ["findAllCourses"])
 
+    TestBed.configureTestingModule({
+        imports: [ 
+            CoursesModule,
+            NoopAnimationsModule
+        ],
+        providers: [
+            { provide: CoursesService, useValue: coursesServiceSpy }
+        ]
+    })
+    .compileComponents()
+    .then(() => {
 
-
-  beforeEach(waitForAsync(() => {
-
-      const coursesServiceSpy = jasmine.createSpyObj('CoursesService', ['findAllCourses'])
-
-      TestBed.configureTestingModule({
-          imports: [
-              CoursesModule,
-              NoopAnimationsModule
-          ],
-          providers: [
-              {provide: CoursesService, useValue: coursesServiceSpy}
-          ]
-      }).compileComponents()
-          .then(() => {
-              fixture = TestBed.createComponent(HomeComponent);
-              component = fixture.componentInstance;
-              el = fixture.debugElement;
-              coursesService = TestBed.get(CoursesService);
-          });
-
+        fixture = TestBed.createComponent(HomeComponent);
+        component = fixture.componentInstance;
+        element = fixture.debugElement;
+        coursesService = TestBed.inject(CoursesService);
+    })
+ 
   }));
 
   it("should create the component", () => {
 
     expect(component).toBeTruthy();
-
   });
 
 
   it("should display only beginner courses", () => {
 
-      coursesService.findAllCourses.and.returnValue(of(beginnerCourses));
+     coursesService.findAllCourses.and.returnValue( 
+       of<Course[]>(beginnersCourses)
+      );
 
-      fixture.detectChanges();
+    fixture.detectChanges();
 
-      const tabs = el.queryAll(By.css(".mat-tab-label"));
-
-      expect(tabs.length).toBe(1, "Unexpected number of tabs found");
-
+    const tabs = element.queryAll(By.css(".mat-tab-label"));
+    expect(tabs.length).toBe(1, "Unexpected number of tabs found");
   });
 
 
   it("should display only advanced courses", () => {
-
-      coursesService.findAllCourses.and.returnValue(of(advancedCourses));
-
-      fixture.detectChanges();
-
-      const tabs = el.queryAll(By.css(".mat-tab-label"));
-
-      expect(tabs.length).toBe(1, "Unexpected number of tabs found");
-
+    coursesService.findAllCourses.and.returnValue(
+      of<Course[]>(advancedCourses)
+    );
+    
+    fixture.detectChanges();
+    
+    const tabs = element.queryAll(By.css(".mat-tab-label"));
+    expect(tabs.length).toBe(1, "Unexpected number of tabs found");
+    
   });
 
 
   it("should display both tabs", () => {
+   coursesService.findAllCourses.and.returnValue(
+     of<Course[]>(setupCourses())
+   )
 
-      coursesService.findAllCourses.and.returnValue(of(setupCourses()));
+   fixture.detectChanges();
 
-      fixture.detectChanges();
-
-      const tabs = el.queryAll(By.css(".mat-tab-label"));
-
-      expect(tabs.length).toBe(2, "Expected to find 2 tabs");
-
+   const tabs = element.queryAll(By.css(".mat-tab-label"));
+   expect(tabs.length).toBe(2, "Expected to find two tabs")
+  
   });
 
 
-  it("should display advanced courses when tab clicked - fakeAsync", fakeAsync(() => {
+  it("should display advanced courses when tab clicked - fakeAsync", () => {
+    coursesService.findAllCourses.and.returnValue(
+      of<Course[]>(setupCourses())
+    );
 
-      coursesService.findAllCourses.and.returnValue(of(setupCourses()));
+    fixture.detectChanges();
 
-      fixture.detectChanges();
+    const tabs = element.queryAll(By.css(".mat-tab-label"));
 
-      const tabs = el.queryAll(By.css(".mat-tab-label"));
+    // element.nativeElement.click();
+    click(tabs[1]);
 
-      click(tabs[1]);
-
-      fixture.detectChanges();
-
-      flush();
-
-      const cardTitles = el.queryAll(By.css('.mat-tab-body-active .mat-card-title'));
-
-      console.log(cardTitles);
-
-      expect(cardTitles.length).toBeGreaterThan(0,"Could not find card titles");
-
-      expect(cardTitles[0].nativeElement.textContent).toContain("Angular Security Course");
-
-  }));
+    fixture.detectChanges();
+    
+    const cardTitles = element.queryAll(By.css(".mat-card-title"));
+    expect(cardTitles.length).toBeGreaterThan(0, "Could not find card titles");
+    expect(cardTitles[0].nativeElement.textContent).toContain("Angular Security Course");
+     
+  });
 
 
-    it("should display advanced courses when tab clicked - async", waitForAsync(() => {
+  // it("should display advanced courses when tab clicked - async", waitForAsync(() => {
 
-        coursesService.findAllCourses.and.returnValue(of(setupCourses()));
+  //     pending();
 
-        fixture.detectChanges();
-
-        const tabs = el.queryAll(By.css(".mat-tab-label"));
-
-        click(tabs[1]);
-
-        fixture.detectChanges();
-
-        fixture.whenStable().then(() => {
-
-            console.log("called whenStable() ");
-
-            const cardTitles = el.queryAll(By.css('.mat-tab-body-active .mat-card-title'));
-
-            expect(cardTitles.length).toBeGreaterThan(0,"Could not find card titles");
-
-            expect(cardTitles[0].nativeElement.textContent).toContain("Angular Security Course");
-
-        });
-
-    }));
+  // }));
 
 
 });

@@ -11,23 +11,21 @@ import {Test} from 'tslint';
 
 
 describe('CoursesCardListComponent', () => {
-
     let component: CoursesCardListComponent;
     let fixture: ComponentFixture<CoursesCardListComponent>;
-    let el: DebugElement;
+    let element: DebugElement;
 
-    beforeEach(waitForAsync(() => {
+    beforeEach( waitForAsync( () => {
+        
         TestBed.configureTestingModule({
-            imports: [CoursesModule]
+            imports: [ CoursesModule ]
         })
         .compileComponents()
         .then(() => {
-
             fixture = TestBed.createComponent(CoursesCardListComponent);
             component = fixture.componentInstance;
-            el = fixture.debugElement;
-
-        });
+            element = fixture.debugElement;
+        })
     }));
 
     it('should create the component', () => {
@@ -37,38 +35,34 @@ describe('CoursesCardListComponent', () => {
     });
 
     it('should display the course list', () => {
+      component.courses = setupCourses();
 
-        component.courses = setupCourses();
+      fixture.detectChanges();
 
-        fixture.detectChanges();
+      console.log(element.nativeElement.outerHTML);
+      
+      const cards = element.queryAll(By.css(".course-card"));
 
-        const cards = el.queryAll(By.css(".course-card"));
-
-        expect(cards).toBeTruthy("Could not find cards");
-        expect(cards.length).toBe(12, "Unexpected number of courses");
-
+      expect(cards).toBeTruthy("Could not find any course card");
+      expect(cards.length).toBe(12, "unexpected number of courses");
+      
+     
     });
 
     it('should display the first course', () => {
-
+       
         component.courses = setupCourses();
 
         fixture.detectChanges();
 
         const course = component.courses[0];
+        const card = element.query(By.css(".course-card:first-child")),
+              title = card.query(By.css("mat-card-title")),
+              image = card.query(By.css("img"))
 
-        const card = el.query(By.css(".course-card:first-child")),
-                title = card.query(By.css("mat-card-title")),
-                image = card.query(By.css("img"));
-
-        expect(card).toBeTruthy("Could not find course card");
-
+        expect(card).toBeTruthy();
         expect(title.nativeElement.textContent).toBe(course.titles.description);
-
         expect(image.nativeElement.src).toBe(course.iconUrl);
-
     });
 
-});
-
-
+})
